@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>InvoKit Pro Licence Generator</title>
+  <style>
+    :root{
+      --bg:#0b0c0f;--panel:#14171d;--panel-2:#191d25;--text:#f3f4f6;--muted:#9aa3b2;
+      --line:#272d39;--gold:#c9a84c;--danger:#ff6b6b;--ok:#29b37e;
+    }
+    *{box-sizing:border-box} body{margin:0;background:linear-gradient(180deg,#0b0c0f,#10131a);color:var(--text);font:14px/1.45 Inter,system-ui,sans-serif}
+    .wrap{max-width:1100px;margin:0 auto;padding:24px}
+    .grid{display:grid;grid-template-columns:1.1fr .9fr;gap:20px}
+    .card{background:rgba(20,23,29,.92);border:1px solid var(--line);border-radius:20px;padding:20px;box-shadow:0 20px 60px rgba(0,0,0,.25)}
+    h1{margin:0 0 8px;font-size:28px} .sub{color:var(--muted);margin:0 0 20px}
+    .label{display:block;margin:0 0 6px;font-size:12px;color:#cfd6e4}
+    input,select,textarea{width:100%;background:var(--panel-2);border:1px solid var(--line);border-radius:14px;color:var(--text);padding:12px 14px;font:inherit;outline:none}
+    input:focus,select:focus,textarea:focus{border-color:var(--gold)}
+    .row{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+    .row-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:14px}
+    .mb{margin-bottom:14px}
+    button{border:0;border-radius:14px;padding:12px 16px;font-weight:700;cursor:pointer}
+    .primary{background:var(--gold);color:#1c1505}.secondary{background:#232937;color:#fff}.danger{background:#41252a;color:#ffd7db}
+    .actions{display:flex;gap:10px;flex-wrap:wrap}
+    .out{background:#0f1319;border:1px dashed #374050;border-radius:16px;padding:16px;min-height:180px;white-space:pre-wrap;word-break:break-word}
+    .hint{color:var(--muted);font-size:12px}
+    .badge{display:inline-flex;align-items:center;gap:8px;padding:8px 12px;border-radius:999px;background:#11161d;border:1px solid var(--line);color:#d7deeb;font-size:12px}
+    .ok{color:var(--ok)} .err{color:var(--danger)}
+    table{width:100%;border-collapse:collapse} th,td{padding:10px 8px;border-bottom:1px solid var(--line);text-align:left;font-size:13px} th{color:#bcc6d6;font-weight:600}
+    @media(max-width: 860px){.grid,.row,.row-3{grid-template-columns:1fr}.wrap{padding:14px} h1{font-size:22px}}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="badge">Manual generator • medium-security starter stack</div>
+    <h1>InvoKit Pro Licence Generator</h1>
+    <p class="sub">Generate, save, revoke, and search licences manually. Use this first, then add Selar and Lemon Squeezy automation later.</p>
+
+    <div class="grid">
+      <section class="card">
+        <h2 style="margin-top:0">Generate licence</h2>
+        <div class="row">
+          <div>
+            <label class="label">Buyer name</label>
+            <input id="buyerName" placeholder="Adewole Samuel" />
+          </div>
+          <div>
+            <label class="label">Buyer email</label>
+            <input id="buyerEmail" type="email" placeholder="buyer@example.com" />
+          </div>
+        </div>
+        <div class="row-3">
+          <div>
+            <label class="label">Plan</label>
+            <select id="plan">
+              <option value="lifetime">Lifetime</option>
+              <option value="annual">Annual</option>
+              <option value="beta">Beta</option>
+            </select>
+          </div>
+          <div>
+            <label class="label">Device limit</label>
+            <select id="deviceLimit">
+              <option>1</option>
+              <option>2</option>
+              <option>3</option>
+            </select>
+          </div>
+          <div>
+            <label class="label">Expiry (optional)</label>
+            <input id="expiresAt" type="date" />
+          </div>
+        </div>
+        <div class="row">
+          <div>
+            <label class="label">Order reference</label>
+            <input id="orderRef" placeholder="SELAR-12345" />
+          </div>
+          <div>
+            <label class="label">Admin secret</label>
+            <input id="adminSecret" type="password" placeholder="Your private admin secret" />
+          </div>
+        </div>
+        <div class="mb">
+          <label class="label">Notes</label>
+          <textarea id="notes" rows="3" placeholder="Optional internal notes"></textarea>
+        </div>
+        <div class="actions">
+          <button class="primary" id="generateBtn">Generate & save</button>
+          <button class="secondary" id="copyBtn" type="button">Copy key</button>
+          <button class="danger" id="revokeBtn" type="button">Revoke copied key</button>
+        </div>
+        <p class="hint">Keep the admin secret private. Never place it inside your public app.</p>
+      </section>
+
+      <section class="card">
+        <h2 style="margin-top:0">Result</h2>
+        <div id="status" class="hint">Ready.</div>
+        <div id="result" class="out">No licence generated yet.</div>
+      </section>
+    </div>
+
+    <section class="card" style="margin-top:20px">
+      <h2 style="margin-top:0">Find licences</h2>
+      <div class="row">
+        <div>
+          <label class="label">Search by email</label>
+          <input id="findEmail" type="email" placeholder="buyer@example.com" />
+        </div>
+        <div>
+          <label class="label">Or serial</label>
+          <input id="findSerial" placeholder="ABCD1234EFGH" />
+        </div>
+      </div>
+      <div class="actions" style="margin-bottom:14px">
+        <button class="secondary" id="findBtn">Find</button>
+      </div>
+      <div style="overflow:auto">
+        <table>
+          <thead>
+            <tr><th>Serial</th><th>Email</th><th>Plan</th><th>Status</th><th>Created</th><th>Last validated</th></tr>
+          </thead>
+          <tbody id="findResults">
+            <tr><td colspan="6" class="hint">No search yet.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+
+<script>
+const API_BASE = 'https://invokit-licence.engineeringstenis.workers.dev';
+let lastGeneratedKey = '';
+
+const $ = (id) => document.getElementById(id);
+
+$('generateBtn').addEventListener('click', generateLicence);
+$('copyBtn').addEventListener('click', async () => {
+  if (!lastGeneratedKey) return setStatus('Nothing to copy yet.', true);
+  await navigator.clipboard.writeText(lastGeneratedKey);
+  setStatus('Licence key copied.');
+});
+$('revokeBtn').addEventListener('click', revokeLastKey);
+$('findBtn').addEventListener('click', findLicences);
+
+async function generateLicence() {
+  const payload = {
+    buyerName: $('buyerName').value,
+    buyerEmail: $('buyerEmail').value,
+    plan: $('plan').value,
+    deviceLimit: Number($('deviceLimit').value),
+    expiresAt: $('expiresAt').value || null,
+    orderRef: $('orderRef').value,
+    notes: $('notes').value
+  };
+  const adminSecret = $('adminSecret').value.trim();
+  if (!adminSecret) return setStatus('Admin secret is required.', true);
+
+  setStatus('Generating and saving licence...');
+  try {
+    const res = await fetch(`${API_BASE}/generate`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Admin-Secret': adminSecret
+      },
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+    if (!res.ok || !data.ok) throw new Error(data.error || 'Failed to generate licence');
+    lastGeneratedKey = data.licence.key;
+    $('result').textContent = JSON.stringify(data.licence, null, 2);
+    setStatus('Licence generated and saved.');
+  } catch (err) {
+    setStatus(err.message || 'Request failed.', true);
+  }
+}
+
+async function revokeLastKey() {
+  const adminSecret = $('adminSecret').value.trim();
+  if (!adminSecret) return setStatus('Admin secret is required.', true);
+  if (!lastGeneratedKey) return setStatus('Generate or paste a key first.', true);
+
+  setStatus('Revoking licence...');
+  try {
+    const res = await fetch(`${API_BASE}/revoke`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Admin-Secret': adminSecret
+      },
+      body: JSON.stringify({ key: lastGeneratedKey })
+    });
+    const data = await res.json();
+    if (!res.ok || !data.ok) throw new Error(data.error || 'Failed to revoke licence');
+    setStatus('Licence revoked.');
+  } catch (err) {
+    setStatus(err.message || 'Revoke failed.', true);
+  }
+}
+
+async function findLicences() {
+  const adminSecret = $('adminSecret').value.trim();
+  if (!adminSecret) return setStatus('Admin secret is required.', true);
+  const email = $('findEmail').value.trim();
+  const serial = $('findSerial').value.trim();
+  if (!email && !serial) return setStatus('Enter email or serial to search.', true);
+
+  setStatus('Searching licences...');
+  try {
+    const qs = new URLSearchParams();
+    if (email) qs.set('email', email);
+    if (serial) qs.set('serial', serial);
+    const res = await fetch(`${API_BASE}/find?${qs.toString()}`, {
+      headers: { 'X-Admin-Secret': adminSecret }
+    });
+    const data = await res.json();
+    if (!res.ok || !data.ok) throw new Error(data.error || 'Search failed');
+    renderResults(data.licences || []);
+    setStatus(`Found ${data.licences.length} licence(s).`);
+  } catch (err) {
+    setStatus(err.message || 'Search failed.', true);
+  }
+}
+
+function renderResults(rows) {
+  const tbody = $('findResults');
+  if (!rows.length) {
+    tbody.innerHTML = '<tr><td colspan="6" class="hint">No matching licence found.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = rows.map(r => `
+    <tr>
+      <td>${escapeHtml(r.serial || '')}</td>
+      <td>${escapeHtml(r.buyer_email || '')}</td>
+      <td>${escapeHtml(r.plan || '')}</td>
+      <td>${escapeHtml(r.status || '')}</td>
+      <td>${formatDate(r.created_at)}</td>
+      <td>${formatDate(r.last_validated_at)}</td>
+    </tr>
+  `).join('');
+}
+
+function formatDate(v) {
+  if (!v) return '—';
+  const d = new Date(v);
+  if (Number.isNaN(d.getTime())) return v;
+  return d.toLocaleString();
+}
+
+function setStatus(msg, isError = false) {
+  $('status').innerHTML = `<span class="${isError ? 'err' : 'ok'}">${escapeHtml(msg)}</span>`;
+}
+
+function escapeHtml(str) {
+  return String(str).replace(/[&<>"']/g, s => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[s]));
+}
+</script>
+</body>
+</html>
