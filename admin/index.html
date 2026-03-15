@@ -60,11 +60,13 @@
             </select>
           </div>
           <div>
-            <label class="label">Device limit</label>
+            <label class="label">Activation limit</label>
             <select id="deviceLimit">
-              <option>1</option>
+              <option>5</option>
               <option>2</option>
+              <option>1</option>
               <option>3</option>
+              <option>4</option>
             </select>
           </div>
           <div>
@@ -91,7 +93,7 @@
           <button class="secondary" id="copyBtn" type="button">Copy key</button>
           <button class="danger" id="revokeBtn" type="button">Revoke copied key</button>
         </div>
-        <p class="hint">Keep the admin secret private. Never place it inside your public app.</p>
+        <p class="hint">Keep the admin secret private. Never place it inside your public app. Defaults: Annual = 2 activations, Lifetime = 5 activations.</p>
       </section>
 
       <section class="card">

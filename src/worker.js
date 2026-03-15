@@ -8,7 +8,7 @@ export default {
       if (method === 'OPTIONS') return handleCors(request, env);
 
       if (path === '/health') {
-        return json({ ok: true, service: 'invokit-licence', ts: Date.now() }, 200, env);
+        return json({ ok: true, service: 'invokit-licence', ts: Date.now() }, 200, request, env);
       }
 
       if (path === '/validate' && method === 'POST') {
@@ -30,36 +30,55 @@ export default {
         return await handleFind(request, env, url);
       }
 
-      return json({ ok: false, error: 'Not found' }, 404, env);
+      return json({ ok: false, error: 'Not found' }, 404, request, env);
     } catch (err) {
-      return json({ ok: false, error: err.message || 'Server error' }, err.status || 500, env);
+      return json({ ok: false, error: err.message || 'Server error' }, err.status || 500, request, env);
     }
   }
 };
 
-function corsHeaders(env) {
-  const origin = env.ALLOWED_ORIGIN || '*';
+function getAllowedOrigins(env) {
+  const configured = String(env.ALLOWED_ORIGIN || '')
+    .split(',')
+    .map(s => s.trim())
+    .filter(Boolean);
+
+  return new Set([
+    'https://app.getinvokitpro.com',
+    'https://admin-invokit.pages.dev',
+    ...configured
+  ]);
+}
+
+function corsHeaders(request, env) {
+  const requestOrigin = request.headers.get('Origin') || '';
+  const allowedOrigins = getAllowedOrigins(env);
+  const allowOrigin = allowedOrigins.has(requestOrigin)
+    ? requestOrigin
+    : [...allowedOrigins][0] || 'https://app.getinvokitpro.com';
+
   return {
-    'Access-Control-Allow-Origin': origin,
+    'Access-Control-Allow-Origin': allowOrigin,
     'Access-Control-Allow-Methods': 'GET,POST,OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type, X-Admin-Secret',
-    'Access-Control-Max-Age': '86400'
+    'Access-Control-Max-Age': '86400',
+    'Vary': 'Origin'
   };
 }
 
-function json(data, status = 200, env) {
+function json(data, status = 200, request, env) {
   return new Response(JSON.stringify(data, null, 2), {
     status,
     headers: {
       'Content-Type': 'application/json; charset=utf-8',
       'Cache-Control': 'no-store',
-      ...corsHeaders(env)
+      ...corsHeaders(request, env)
     }
   });
 }
 
 function handleCors(request, env) {
-  return new Response(null, { status: 204, headers: corsHeaders(env) });
+  return new Response(null, { status: 204, headers: corsHeaders(request, env) });
 }
 
 async function requireAdmin(request, env) {
@@ -84,7 +103,8 @@ async function handleGenerate(request, env) {
   const buyerEmail = normalizeEmail(body.buyerEmail);
   const plan = clean(body.plan || 'lifetime', 40).toLowerCase();
   const orderRef = clean(body.orderRef || '', 120);
-  const deviceLimit = clampInt(body.deviceLimit ?? 1, 1, 5);
+  const defaultActivationLimit = plan === 'annual' ? 2 : plan === 'lifetime' ? 5 : 1;
+  const deviceLimit = clampInt(body.deviceLimit ?? defaultActivationLimit, 1, 5);
   const expiresAt = normalizeExpiry(body.expiresAt);
   const notes = clean(body.notes || '', 500);
 
@@ -128,7 +148,7 @@ async function handleGenerate(request, env) {
       status: 'active',
       createdAt: now
     }
-  }, 200, env);
+  }, 200, request, env);
 }
 
 async function handleValidate(request, env) {
@@ -167,7 +187,7 @@ async function handleValidate(request, env) {
   const activationCount = Number(activationCountRow?.c || 0);
 
   if (!existingActivation && activationCount >= Number(licence.device_limit || 1)) {
-    throw httpError('Activation limit reached for this licence', 403);
+    throw httpError('Activation limit reached for this licence. Annual licences include 2 activations and Lifetime licences include 5.', 403);
   }
 
   const now = new Date().toISOString();
@@ -212,7 +232,7 @@ async function handleValidate(request, env) {
         expiresAt: licence.expires_at || null
       }
     }
-  }, 200, env);
+  }, 200, request, env);
 }
 
 async function handleRevoke(request, env) {
@@ -224,7 +244,7 @@ async function handleRevoke(request, env) {
   const res = await env.DB.prepare(`
     UPDATE licences SET status = 'revoked', updated_at = ? WHERE licence_key_hash = ?
   `).bind(now, keyHash).run();
-  return json({ ok: true, updated: res.meta?.changes || 0 }, 200, env);
+  return json({ ok: true, updated: res.meta?.changes || 0 }, 200, request, env);
 }
 
 async function handleFind(request, env, url) {
@@ -245,7 +265,7 @@ async function handleFind(request, env, url) {
     `).bind(serial);
   }
   const { results } = await stmt.all();
-  return json({ ok: true, licences: results || [] }, 200, env);
+  return json({ ok: true, licences: results || [] }, 200, request, env);
 }
 
 function clean(value, maxLen = 255) {

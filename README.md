@@ -116,3 +116,10 @@ Then add later:
 - Lemon Squeezy webhook
 - Selar webhook
 - automatic email delivery
+
+
+## Recommended activation defaults
+
+- Annual licences usually use 2 activations
+- Lifetime licences usually use 5 activations
+- The database field name remains `device_limit` for compatibility, but user-facing copy should describe these as activations

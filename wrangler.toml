@@ -5,4 +5,4 @@ compatibility_date = "2026-03-13"
 [[d1_databases]]
 binding = "DB"
 database_name = "invokit_licences"
-database_id = "REPLACE_WITH_YOUR_D1_DATABASE_ID"
+database_id = "2c4b8f3e-4fd2-4ff3-b536-509623484978"
