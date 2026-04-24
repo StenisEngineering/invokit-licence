@@ -1,262 +1,718 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>InvoKit Pro Licence Generator</title>
-  <style>
-    :root{
-      --bg:#0b0c0f;--panel:#14171d;--panel-2:#191d25;--text:#f3f4f6;--muted:#9aa3b2;
-      --line:#272d39;--gold:#c9a84c;--danger:#ff6b6b;--ok:#29b37e;
-    }
-    *{box-sizing:border-box} body{margin:0;background:linear-gradient(180deg,#0b0c0f,#10131a);color:var(--text);font:14px/1.45 Inter,system-ui,sans-serif}
-    .wrap{max-width:1100px;margin:0 auto;padding:24px}
-    .grid{display:grid;grid-template-columns:1.1fr .9fr;gap:20px}
-    .card{background:rgba(20,23,29,.92);border:1px solid var(--line);border-radius:20px;padding:20px;box-shadow:0 20px 60px rgba(0,0,0,.25)}
-    h1{margin:0 0 8px;font-size:28px} .sub{color:var(--muted);margin:0 0 20px}
-    .label{display:block;margin:0 0 6px;font-size:12px;color:#cfd6e4}
-    input,select,textarea{width:100%;background:var(--panel-2);border:1px solid var(--line);border-radius:14px;color:var(--text);padding:12px 14px;font:inherit;outline:none}
-    input:focus,select:focus,textarea:focus{border-color:var(--gold)}
-    .row{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
-    .row-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:14px}
-    .mb{margin-bottom:14px}
-    button{border:0;border-radius:14px;padding:12px 16px;font-weight:700;cursor:pointer}
-    .primary{background:var(--gold);color:#1c1505}.secondary{background:#232937;color:#fff}.danger{background:#41252a;color:#ffd7db}
-    .actions{display:flex;gap:10px;flex-wrap:wrap}
-    .out{background:#0f1319;border:1px dashed #374050;border-radius:16px;padding:16px;min-height:180px;white-space:pre-wrap;word-break:break-word}
-    .hint{color:var(--muted);font-size:12px}
-    .badge{display:inline-flex;align-items:center;gap:8px;padding:8px 12px;border-radius:999px;background:#11161d;border:1px solid var(--line);color:#d7deeb;font-size:12px}
-    .ok{color:var(--ok)} .err{color:var(--danger)}
-    table{width:100%;border-collapse:collapse} th,td{padding:10px 8px;border-bottom:1px solid var(--line);text-align:left;font-size:13px} th{color:#bcc6d6;font-weight:600}
-    @media(max-width: 860px){.grid,.row,.row-3{grid-template-columns:1fr}.wrap{padding:14px} h1{font-size:22px}}
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>InvoKit Pro — Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
+:root{
+  --gold:#c9a84c;--gold2:#e8c97a;--gold-dim:rgba(201,168,76,0.1);--gold-glow:rgba(201,168,76,0.2);
+  --navy:#0a0b11;--surface:#111220;--surface2:#161828;--surface3:#1a1c2e;
+  --border:rgba(255,255,255,0.07);--border2:rgba(201,168,76,0.18);
+  --text:#e8e4dc;--text2:#a09a90;--text3:#5a5650;
+  --green:#3dba7e;--green-dim:rgba(61,186,126,0.12);
+  --red:#e05a5a;--red-dim:rgba(224,90,90,0.12);
+  --radius:10px;--tr:0.2s ease;
+}
+html{font-size:15px;}
+body{font-family:'Outfit',sans-serif;background:var(--navy);color:var(--text);min-height:100vh;-webkit-font-smoothing:antialiased;}
+
+/* LOGIN */
+#loginScreen{position:fixed;inset:0;background:var(--navy);display:flex;align-items:center;justify-content:center;z-index:999;}
+.login-box{width:380px;padding:48px 40px;background:var(--surface);border:1px solid var(--border2);border-radius:16px;text-align:center;}
+.login-logo{font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.2em;color:var(--gold);text-transform:uppercase;margin-bottom:24px;}
+.login-title{font-size:24px;font-weight:700;color:var(--text);margin-bottom:6px;}
+.login-sub{font-size:13px;color:var(--text3);margin-bottom:32px;}
+.login-input{width:100%;padding:12px 16px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'DM Mono',monospace;font-size:13px;letter-spacing:0.06em;outline:none;margin-bottom:12px;transition:border var(--tr);}
+.login-input:focus{border-color:var(--gold);}
+.login-btn{width:100%;padding:13px;background:linear-gradient(135deg,var(--gold),#9a6e1c);color:#0a0b11;font-family:'Outfit',sans-serif;font-size:14px;font-weight:700;border:none;border-radius:8px;cursor:pointer;transition:opacity var(--tr);}
+.login-btn:hover{opacity:0.9;}
+.login-err{font-size:12px;color:var(--red);margin-top:8px;min-height:16px;}
+
+/* LAYOUT */
+#app{display:none;min-height:100vh;}
+.topbar{height:56px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 24px;position:sticky;top:0;z-index:100;}
+.topbar-brand{font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.18em;color:var(--gold);text-transform:uppercase;}
+.topbar-right{display:flex;align-items:center;gap:16px;}
+.topbar-status{font-size:11px;color:var(--text3);font-family:'DM Mono',monospace;}
+.logout-btn{font-size:12px;color:var(--text3);cursor:pointer;padding:4px 10px;border:1px solid var(--border);border-radius:6px;background:transparent;color:var(--text2);transition:all var(--tr);}
+.logout-btn:hover{border-color:var(--border2);color:var(--text);}
+
+.main{padding:28px 28px;}
+
+/* TABS */
+.tabs{display:flex;gap:4px;margin-bottom:24px;background:var(--surface);padding:4px;border-radius:10px;width:fit-content;border:1px solid var(--border);}
+.tab{padding:8px 20px;border-radius:7px;font-size:13px;font-weight:500;cursor:pointer;color:var(--text3);transition:all var(--tr);border:none;background:transparent;}
+.tab.active{background:var(--surface3);color:var(--text);box-shadow:0 2px 8px rgba(0,0,0,0.2);}
+.tab:hover:not(.active){color:var(--text2);}
+
+/* STATS ROW */
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:24px;}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;}
+.stat-label{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:var(--text3);margin-bottom:8px;}
+.stat-val{font-size:28px;font-weight:700;color:var(--text);line-height:1;}
+.stat-sub{font-size:11px;color:var(--text3);margin-top:5px;}
+.stat-card.gold .stat-val{color:var(--gold);}
+.stat-card.green .stat-val{color:var(--green);}
+
+/* PANEL */
+.panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:20px;}
+.panel-header{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+.panel-title{font-size:14px;font-weight:600;color:var(--text);}
+.panel-body{padding:20px;}
+
+/* FORM */
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.form-grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;}
+.field{display:flex;flex-direction:column;gap:5px;}
+.field label{font-size:11px;font-family:'DM Mono',monospace;letter-spacing:0.1em;text-transform:uppercase;color:var(--text3);}
+.field input,.field select,.field textarea{padding:10px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:7px;color:var(--text);font-family:'Outfit',sans-serif;font-size:13px;outline:none;transition:border var(--tr);}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--gold);}
+.field select option{background:var(--surface2);}
+.field-full{grid-column:1/-1;}
+
+/* BUTTONS */
+.btn{padding:9px 18px;border-radius:7px;font-size:13px;font-weight:600;cursor:pointer;border:none;transition:all var(--tr);font-family:'Outfit',sans-serif;}
+.btn-primary{background:linear-gradient(135deg,var(--gold),#9a6e1c);color:#0a0b11;}
+.btn-primary:hover{opacity:0.88;}
+.btn-ghost{background:transparent;border:1px solid var(--border2);color:var(--gold);}
+.btn-ghost:hover{background:var(--gold-dim);}
+.btn-danger{background:var(--red-dim);border:1px solid rgba(224,90,90,0.25);color:var(--red);}
+.btn-danger:hover{background:rgba(224,90,90,0.2);}
+.btn-sm{padding:5px 12px;font-size:12px;}
+.btn:disabled{opacity:0.4;cursor:not-allowed;}
+
+/* RESULT BOX */
+.result-box{margin-top:16px;padding:16px;background:var(--surface2);border-radius:8px;border:1px solid var(--border);display:none;}
+.result-box.show{display:block;}
+.result-key{font-family:'DM Mono',monospace;font-size:20px;font-weight:500;color:var(--gold);letter-spacing:0.08em;margin-bottom:10px;}
+.result-detail{font-size:12px;color:var(--text3);line-height:1.8;}
+.copy-btn{margin-top:10px;display:inline-flex;align-items:center;gap:6px;padding:7px 14px;background:var(--gold-dim);border:1px solid var(--border2);border-radius:6px;color:var(--gold);font-size:12px;font-weight:600;cursor:pointer;font-family:'Outfit',sans-serif;}
+.copy-btn:hover{background:rgba(201,168,76,0.18);}
+
+/* TABLE */
+.table-wrap{overflow-x:auto;}
+table{width:100%;border-collapse:collapse;}
+thead tr{border-bottom:1px solid var(--border);}
+th{padding:10px 14px;text-align:left;font-family:'DM Mono',monospace;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:var(--text3);font-weight:500;}
+td{padding:11px 14px;font-size:13px;color:var(--text2);border-bottom:1px solid rgba(255,255,255,0.04);}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:rgba(255,255,255,0.02);}
+.badge{display:inline-block;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:600;font-family:'DM Mono',monospace;letter-spacing:0.06em;}
+.badge-active{background:var(--green-dim);color:var(--green);}
+.badge-revoked{background:var(--red-dim);color:var(--red);}
+.badge-free{background:var(--gold-dim);color:var(--gold);}
+.badge-annual{background:rgba(91,156,246,0.12);color:#5b9cf6;}
+.badge-lifetime{background:rgba(155,89,182,0.12);color:#9b59b6;}
+.mono{font-family:'DM Mono',monospace;font-size:12px;letter-spacing:0.04em;}
+
+/* SEARCH */
+.search-row{display:flex;gap:10px;margin-bottom:18px;flex-wrap:wrap;}
+.search-input{flex:1;min-width:200px;padding:9px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:7px;color:var(--text);font-size:13px;outline:none;font-family:'Outfit',sans-serif;}
+.search-input:focus{border-color:var(--gold);}
+
+/* MSG */
+.msg{padding:10px 14px;border-radius:7px;font-size:13px;margin-top:10px;display:none;}
+.msg.show{display:block;}
+.msg-success{background:var(--green-dim);border:1px solid rgba(61,186,126,0.2);color:var(--green);}
+.msg-error{background:var(--red-dim);border:1px solid rgba(224,90,90,0.2);color:var(--red);}
+.msg-info{background:var(--gold-dim);border:1px solid var(--border2);color:var(--gold);}
+
+/* EMPTY */
+.empty{text-align:center;padding:48px 20px;color:var(--text3);font-size:13px;}
+.empty-icon{font-size:32px;margin-bottom:12px;}
+
+/* LOADER */
+.loader{display:inline-block;width:14px;height:14px;border:2px solid rgba(201,168,76,0.2);border-top-color:var(--gold);border-radius:50%;animation:spin 0.7s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+@media(max-width:768px){
+  .stats-row{grid-template-columns:1fr 1fr;}
+  .form-grid,.form-grid-3{grid-template-columns:1fr;}
+  .main{padding:16px;}
+}
+</style>
 </head>
 <body>
-  <div class="wrap">
-    <div class="badge">Manual generator • medium-security starter stack</div>
-    <h1>InvoKit Pro Licence Generator</h1>
-    <p class="sub">Generate, save, revoke, and search licences manually. Use this first, then add Selar and Lemon Squeezy automation later.</p>
 
-    <div class="grid">
-      <section class="card">
-        <h2 style="margin-top:0">Generate licence</h2>
-        <div class="row">
-          <div>
-            <label class="label">Buyer name</label>
-            <input id="buyerName" placeholder="Adewole Samuel" />
-          </div>
-          <div>
-            <label class="label">Buyer email</label>
-            <input id="buyerEmail" type="email" placeholder="buyer@example.com" />
-          </div>
-        </div>
-        <div class="row-3">
-          <div>
-            <label class="label">Plan</label>
-            <select id="plan">
-              <option value="lifetime">Lifetime</option>
-              <option value="annual">Annual</option>
-              <option value="beta">Beta</option>
-            </select>
-          </div>
-          <div>
-            <label class="label">Activation limit</label>
-            <select id="deviceLimit">
-              <option>5</option>
-              <option>2</option>
-              <option>1</option>
-              <option>3</option>
-              <option>4</option>
-            </select>
-          </div>
-          <div>
-            <label class="label">Expiry (optional)</label>
-            <input id="expiresAt" type="date" />
-          </div>
-        </div>
-        <div class="row">
-          <div>
-            <label class="label">Order reference</label>
-            <input id="orderRef" placeholder="SELAR-12345" />
-          </div>
-          <div>
-            <label class="label">Admin secret</label>
-            <input id="adminSecret" type="password" placeholder="Your private admin secret" />
-          </div>
-        </div>
-        <div class="mb">
-          <label class="label">Notes</label>
-          <textarea id="notes" rows="3" placeholder="Optional internal notes"></textarea>
-        </div>
-        <div class="actions">
-          <button class="primary" id="generateBtn">Generate & save</button>
-          <button class="secondary" id="copyBtn" type="button">Copy key</button>
-          <button class="danger" id="revokeBtn" type="button">Revoke copied key</button>
-        </div>
-        <p class="hint">Keep the admin secret private. Never place it inside your public app. Defaults: Annual = 2 activations, Lifetime = 5 activations.</p>
-      </section>
+<!-- LOGIN -->
+<div id="loginScreen">
+  <div class="login-box">
+    <div class="login-logo">InvoKit Pro</div>
+    <div class="login-title">Admin Panel</div>
+    <div class="login-sub">Enter your admin secret to continue</div>
+    <input class="login-input" type="password" id="secretInput" placeholder="Admin secret key" onkeydown="if(event.key==='Enter')doLogin()">
+    <button class="login-btn" onclick="doLogin()">Sign In →</button>
+    <div class="login-err" id="loginErr"></div>
+  </div>
+</div>
 
-      <section class="card">
-        <h2 style="margin-top:0">Result</h2>
-        <div id="status" class="hint">Ready.</div>
-        <div id="result" class="out">No licence generated yet.</div>
-      </section>
+<!-- APP -->
+<div id="app">
+  <div class="topbar">
+    <div class="topbar-brand">InvoKit Pro · Admin</div>
+    <div class="topbar-right">
+      <span class="topbar-status" id="workerStatus">Connecting...</span>
+      <button class="logout-btn" onclick="doLogout()">Sign out</button>
     </div>
-
-    <section class="card" style="margin-top:20px">
-      <h2 style="margin-top:0">Find licences</h2>
-      <div class="row">
-        <div>
-          <label class="label">Search by email</label>
-          <input id="findEmail" type="email" placeholder="buyer@example.com" />
-        </div>
-        <div>
-          <label class="label">Or serial</label>
-          <input id="findSerial" placeholder="ABCD1234EFGH" />
-        </div>
-      </div>
-      <div class="actions" style="margin-bottom:14px">
-        <button class="secondary" id="findBtn">Find</button>
-      </div>
-      <div style="overflow:auto">
-        <table>
-          <thead>
-            <tr><th>Serial</th><th>Email</th><th>Plan</th><th>Status</th><th>Created</th><th>Last validated</th></tr>
-          </thead>
-          <tbody id="findResults">
-            <tr><td colspan="6" class="hint">No search yet.</td></tr>
-          </tbody>
-        </table>
-      </div>
-    </section>
   </div>
 
+  <div class="main">
+
+    <!-- STATS -->
+    <div class="stats-row" id="statsRow">
+      <div class="stat-card gold">
+        <div class="stat-label">Total Licences</div>
+        <div class="stat-val" id="statTotal">—</div>
+        <div class="stat-sub">All time</div>
+      </div>
+      <div class="stat-card green">
+        <div class="stat-label">Active</div>
+        <div class="stat-val" id="statActive">—</div>
+        <div class="stat-sub">Currently valid</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Free Plan</div>
+        <div class="stat-val" id="statFree">—</div>
+        <div class="stat-sub">of 10 max</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Revoked</div>
+        <div class="stat-val" id="statRevoked">—</div>
+        <div class="stat-sub">Disabled keys</div>
+      </div>
+    </div>
+
+    <!-- TABS -->
+    <div class="tabs">
+      <button class="tab active" onclick="switchTab('licences',this)">All Licences</button>
+      <button class="tab" onclick="switchTab('generate',this)">Generate Key</button>
+      <button class="tab" onclick="switchTab('find',this)">Find / Revoke</button>
+    </div>
+
+    <!-- TAB: LICENCES -->
+    <div id="tab-licences">
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title">All Licences</div>
+          <button class="btn btn-ghost btn-sm" onclick="loadLicences()">↺ Refresh</button>
+        </div>
+        <div class="panel-body">
+          <div class="search-row">
+            <input class="search-input" type="text" id="licenceSearch" placeholder="Search by email, name or key…" oninput="filterLicences()">
+            <select id="filterPlan" onchange="filterLicences()" style="padding:9px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:7px;color:var(--text2);font-size:13px;outline:none;">
+              <option value="">All plans</option>
+              <option value="free">Free</option>
+              <option value="annual">Annual</option>
+              <option value="lifetime">Lifetime</option>
+            </select>
+            <select id="filterStatus" onchange="filterLicences()" style="padding:9px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:7px;color:var(--text2);font-size:13px;outline:none;">
+              <option value="">All statuses</option>
+              <option value="active">Active</option>
+              <option value="revoked">Revoked</option>
+            </select>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Buyer</th>
+                  <th>Key</th>
+                  <th>Plan</th>
+                  <th>Devices</th>
+                  <th>Status</th>
+                  <th>Created</th>
+                  <th>Last Used</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="licencesBody">
+                <tr><td colspan="8" class="empty"><div class="empty-icon">⏳</div>Loading licences…</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div id="licenceCount" style="margin-top:12px;font-size:11px;color:var(--text3);font-family:'DM Mono',monospace;"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB: GENERATE -->
+    <div id="tab-generate" style="display:none;">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+
+        <!-- PAID -->
+        <div class="panel">
+          <div class="panel-header">
+            <div class="panel-title">Generate Paid Licence</div>
+          </div>
+          <div class="panel-body">
+            <div style="display:flex;flex-direction:column;gap:12px;">
+              <div class="field">
+                <label>Buyer Name</label>
+                <input type="text" id="g_name" placeholder="Full name">
+              </div>
+              <div class="field">
+                <label>Email</label>
+                <input type="email" id="g_email" placeholder="buyer@email.com">
+              </div>
+              <div class="form-grid">
+                <div class="field">
+                  <label>Plan</label>
+                  <select id="g_plan" onchange="updateDeviceLimit()">
+                    <option value="annual">Annual (2 devices)</option>
+                    <option value="lifetime">Lifetime (5 devices)</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label>Device Limit</label>
+                  <input type="number" id="g_devices" value="2" min="1" max="5">
+                </div>
+              </div>
+              <div class="field">
+                <label>Order Reference</label>
+                <input type="text" id="g_ref" placeholder="e.g. SELAR-001 or BANK-REF">
+              </div>
+              <div class="field">
+                <label>Notes (optional)</label>
+                <input type="text" id="g_notes" placeholder="e.g. Manual sale via WhatsApp">
+              </div>
+              <button class="btn btn-primary" onclick="generatePaid()" id="genPaidBtn">Generate Key →</button>
+              <div class="msg" id="genPaidMsg"></div>
+              <div class="result-box" id="genPaidResult">
+                <div class="stat-label" style="margin-bottom:6px;">Generated Key</div>
+                <div class="result-key" id="genPaidKey"></div>
+                <div class="result-detail" id="genPaidDetail"></div>
+                <button class="copy-btn" onclick="copyKey('genPaidKey')">⎘ Copy Key</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- FREE -->
+        <div class="panel">
+          <div class="panel-header">
+            <div class="panel-title">Generate Free Licence</div>
+          </div>
+          <div class="panel-body">
+            <div style="display:flex;flex-direction:column;gap:12px;">
+              <div style="padding:10px 12px;background:var(--gold-dim);border:1px solid var(--border2);border-radius:7px;font-size:12px;color:var(--text2);line-height:1.6;">
+                Free licences are limited to <strong style="color:var(--gold);">5 invoices</strong>, 1 device, no PDF export. Max 10 free licences total.
+              </div>
+              <div class="field">
+                <label>Recipient Name</label>
+                <input type="text" id="f_name" placeholder="Full name">
+              </div>
+              <div class="field">
+                <label>Email</label>
+                <input type="email" id="f_email" placeholder="recipient@email.com">
+              </div>
+              <div class="field">
+                <label>Notes (optional)</label>
+                <input type="text" id="f_notes" placeholder="e.g. Beta tester, referred by…">
+              </div>
+              <button class="btn btn-ghost" onclick="generateFree()" id="genFreeBtn">Generate Free Key →</button>
+              <div class="msg" id="genFreeMsg"></div>
+              <div class="result-box" id="genFreeResult">
+                <div class="stat-label" style="margin-bottom:6px;">Generated Key</div>
+                <div class="result-key" id="genFreeKey"></div>
+                <div class="result-detail" id="genFreeDetail"></div>
+                <button class="copy-btn" onclick="copyKey('genFreeKey')">⎘ Copy Key</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- TAB: FIND / REVOKE -->
+    <div id="tab-find" style="display:none;">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+
+        <!-- FIND -->
+        <div class="panel">
+          <div class="panel-header">
+            <div class="panel-title">Find Licence</div>
+          </div>
+          <div class="panel-body">
+            <div style="display:flex;flex-direction:column;gap:12px;">
+              <div class="field">
+                <label>Search by Email</label>
+                <input type="email" id="find_email" placeholder="buyer@email.com" onkeydown="if(event.key==='Enter')findLicence()">
+              </div>
+              <div style="text-align:center;font-size:11px;color:var(--text3);">— or —</div>
+              <div class="field">
+                <label>Search by Serial</label>
+                <input type="text" id="find_serial" placeholder="333FCCD0961F" onkeydown="if(event.key==='Enter')findLicence()" style="font-family:'DM Mono',monospace;">
+              </div>
+              <button class="btn btn-ghost" onclick="findLicence()" id="findBtn">Search →</button>
+              <div class="msg" id="findMsg"></div>
+              <div id="findResults"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- REVOKE -->
+        <div class="panel">
+          <div class="panel-header">
+            <div class="panel-title">Revoke Licence</div>
+          </div>
+          <div class="panel-body">
+            <div style="display:flex;flex-direction:column;gap:12px;">
+              <div style="padding:10px 12px;background:var(--red-dim);border:1px solid rgba(224,90,90,0.2);border-radius:7px;font-size:12px;color:var(--text2);line-height:1.6;">
+                ⚠ Revoking a key immediately blocks the user from opening the app. This cannot be undone without re-generating a new key.
+              </div>
+              <div class="field">
+                <label>Licence Key to Revoke</label>
+                <input type="text" id="revoke_key" placeholder="IVK-XXXX-XXXX-XXXX" style="font-family:'DM Mono',monospace;letter-spacing:0.06em;">
+              </div>
+              <div class="field">
+                <label>Confirm — type REVOKE</label>
+                <input type="text" id="revoke_confirm" placeholder="REVOKE">
+              </div>
+              <button class="btn btn-danger" onclick="revokeLicence()" id="revokeBtn">Revoke Key</button>
+              <div class="msg" id="revokeMsg"></div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+</div>
+
 <script>
-const API_BASE = 'https://invokit-licence.engineeringstenis.workers.dev';
-let lastGeneratedKey = '';
+const WORKER = 'https://invokit-licence.engineeringstenis.workers.dev';
+let ADMIN_SECRET = '';
+let allLicences = [];
 
-const $ = (id) => document.getElementById(id);
+// ── AUTH ──────────────────────────────────────────────────────────────────────
+async function doLogin() {
+  const secret = document.getElementById('secretInput').value.trim();
+  if (!secret) return;
+  const errEl = document.getElementById('loginErr');
+  errEl.textContent = 'Checking...';
+  try {
+    const res = await fetch(WORKER + '/health');
+    const data = await res.json();
+    if (!data.ok) throw new Error('Worker not reachable');
+    // Test secret with a find request
+    const test = await fetch(WORKER + '/find?serial=TEST', {
+      headers: { 'X-Admin-Secret': secret }
+    });
+    if (test.status === 401 || test.status === 403) {
+      errEl.textContent = 'Incorrect admin secret.';
+      return;
+    }
+    ADMIN_SECRET = secret;
+    try { localStorage.setItem('invokit_admin_secret', secret); } catch(e){}
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+    document.getElementById('workerStatus').textContent = '● Worker online';
+    document.getElementById('workerStatus').style.color = 'var(--green)';
+    loadLicences();
+    errEl.textContent = '';
+  } catch(e) {
+    errEl.textContent = 'Could not reach worker. Check internet.';
+  }
+}
 
-$('generateBtn').addEventListener('click', generateLicence);
-$('copyBtn').addEventListener('click', async () => {
-  if (!lastGeneratedKey) return setStatus('Nothing to copy yet.', true);
-  await navigator.clipboard.writeText(lastGeneratedKey);
-  setStatus('Licence key copied.');
+function doLogout() {
+  ADMIN_SECRET = '';
+  try { localStorage.removeItem('invokit_admin_secret'); } catch(e){}
+  document.getElementById('loginScreen').style.display = 'flex';
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('secretInput').value = '';
+}
+
+// Auto-login if secret saved
+window.addEventListener('DOMContentLoaded', () => {
+  try {
+    const saved = localStorage.getItem('invokit_admin_secret');
+    if (saved) {
+      document.getElementById('secretInput').value = saved;
+      doLogin();
+    }
+  } catch(e){}
 });
-$('revokeBtn').addEventListener('click', revokeLastKey);
-$('findBtn').addEventListener('click', findLicences);
 
-async function generateLicence() {
-  const payload = {
-    buyerName: $('buyerName').value,
-    buyerEmail: $('buyerEmail').value,
-    plan: $('plan').value,
-    deviceLimit: Number($('deviceLimit').value),
-    expiresAt: $('expiresAt').value || null,
-    orderRef: $('orderRef').value,
-    notes: $('notes').value
+// ── API HELPERS ───────────────────────────────────────────────────────────────
+async function api(path, method, body) {
+  const opts = {
+    method: method || 'GET',
+    headers: { 'X-Admin-Secret': ADMIN_SECRET }
   };
-  const adminSecret = $('adminSecret').value.trim();
-  if (!adminSecret) return setStatus('Admin secret is required.', true);
-
-  setStatus('Generating and saving licence...');
-  try {
-    const res = await fetch(`${API_BASE}/generate`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Admin-Secret': adminSecret
-      },
-      body: JSON.stringify(payload)
-    });
-    const data = await res.json();
-    if (!res.ok || !data.ok) throw new Error(data.error || 'Failed to generate licence');
-    lastGeneratedKey = data.licence.key;
-    $('result').textContent = JSON.stringify(data.licence, null, 2);
-    setStatus('Licence generated and saved.');
-  } catch (err) {
-    setStatus(err.message || 'Request failed.', true);
+  if (body) {
+    opts.headers['Content-Type'] = 'application/json';
+    opts.body = JSON.stringify(body);
   }
+  const res = await fetch(WORKER + path, opts);
+  return res.json();
 }
 
-async function revokeLastKey() {
-  const adminSecret = $('adminSecret').value.trim();
-  if (!adminSecret) return setStatus('Admin secret is required.', true);
-  if (!lastGeneratedKey) return setStatus('Generate or paste a key first.', true);
-
-  setStatus('Revoking licence...');
-  try {
-    const res = await fetch(`${API_BASE}/revoke`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Admin-Secret': adminSecret
-      },
-      body: JSON.stringify({ key: lastGeneratedKey })
-    });
-    const data = await res.json();
-    if (!res.ok || !data.ok) throw new Error(data.error || 'Failed to revoke licence');
-    setStatus('Licence revoked.');
-  } catch (err) {
-    setStatus(err.message || 'Revoke failed.', true);
-  }
+// ── TABS ──────────────────────────────────────────────────────────────────────
+function switchTab(name, el) {
+  document.querySelectorAll('[id^="tab-"]').forEach(t => t.style.display = 'none');
+  document.getElementById('tab-' + name).style.display = 'block';
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  if (name === 'licences') loadLicences();
 }
 
-async function findLicences() {
-  const adminSecret = $('adminSecret').value.trim();
-  if (!adminSecret) return setStatus('Admin secret is required.', true);
-  const email = $('findEmail').value.trim();
-  const serial = $('findSerial').value.trim();
-  if (!email && !serial) return setStatus('Enter email or serial to search.', true);
-
-  setStatus('Searching licences...');
-  try {
-    const qs = new URLSearchParams();
-    if (email) qs.set('email', email);
-    if (serial) qs.set('serial', serial);
-    const res = await fetch(`${API_BASE}/find?${qs.toString()}`, {
-      headers: { 'X-Admin-Secret': adminSecret }
-    });
-    const data = await res.json();
-    if (!res.ok || !data.ok) throw new Error(data.error || 'Search failed');
-    renderResults(data.licences || []);
-    setStatus(`Found ${data.licences.length} licence(s).`);
-  } catch (err) {
-    setStatus(err.message || 'Search failed.', true);
-  }
+// ── LICENCES TABLE ────────────────────────────────────────────────────────────
+async function loadLicences() {
+  const tbody = document.getElementById('licencesBody');
+  tbody.innerHTML = '<tr><td colspan="8" class="empty"><div class="loader"></div></td></tr>';
+  // Load by known emails (find all) — worker doesn't have a list-all endpoint
+  // We'll load by searching common plan types via recent generates
+  // For now use a workaround: try to find by email if stored, else show message
+  showKnownLicences();
 }
 
-function renderResults(rows) {
-  const tbody = $('findResults');
-  if (!rows.length) {
-    tbody.innerHTML = '<tr><td colspan="6" class="hint">No matching licence found.</td></tr>';
+function showKnownLicences() {
+  // Get from localStorage cache
+  let cached = [];
+  try { cached = JSON.parse(localStorage.getItem('invokit_admin_cache') || '[]'); } catch(e){}
+  allLicences = cached;
+  renderLicencesTable(cached);
+  updateStats(cached);
+  document.getElementById('licenceCount').textContent = cached.length + ' licences loaded. Use Generate tab to add new ones — they appear here automatically.';
+}
+
+function renderLicencesTable(licences) {
+  const tbody = document.getElementById('licencesBody');
+  if (!licences.length) {
+    tbody.innerHTML = '<tr><td colspan="8" class="empty"><div class="empty-icon">🔑</div>No licences yet. Generate your first key above.</td></tr>';
     return;
   }
-  tbody.innerHTML = rows.map(r => `
-    <tr>
-      <td>${escapeHtml(r.serial || '')}</td>
-      <td>${escapeHtml(r.buyer_email || '')}</td>
-      <td>${escapeHtml(r.plan || '')}</td>
-      <td>${escapeHtml(r.status || '')}</td>
-      <td>${formatDate(r.created_at)}</td>
-      <td>${formatDate(r.last_validated_at)}</td>
-    </tr>
-  `).join('');
+  tbody.innerHTML = licences.map(l => {
+    const planBadge = l.plan === 'free' ? 'badge-free' : l.plan === 'annual' ? 'badge-annual' : 'badge-lifetime';
+    const statusBadge = l.status === 'active' ? 'badge-active' : 'badge-revoked';
+    const created = l.createdAt ? new Date(l.createdAt).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'2-digit'}) : '—';
+    const lastUsed = l.lastValidatedAt ? new Date(l.lastValidatedAt).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'2-digit'}) : 'Never';
+    return '<tr>' +
+      '<td><div style="font-weight:500;color:var(--text)">' + esc(l.buyerName||l.recipientName||'—') + '</div><div style="font-size:11px;color:var(--text3)">' + esc(l.buyerEmail||'') + '</div></td>' +
+      '<td class="mono">' + esc(l.key||'—') + '</td>' +
+      '<td><span class="badge ' + planBadge + '">' + (l.plan||'—').toUpperCase() + '</span></td>' +
+      '<td style="text-align:center">' + (l.deviceLimit||1) + '</td>' +
+      '<td><span class="badge ' + statusBadge + '">' + (l.status||'—') + '</span></td>' +
+      '<td style="font-size:12px">' + created + '</td>' +
+      '<td style="font-size:12px">' + lastUsed + '</td>' +
+      '<td><button class="btn btn-danger btn-sm" onclick="quickRevoke(\'' + esc(l.key) + '\')">Revoke</button></td>' +
+    '</tr>';
+  }).join('');
 }
 
-function formatDate(v) {
-  if (!v) return '—';
-  const d = new Date(v);
-  if (Number.isNaN(d.getTime())) return v;
-  return d.toLocaleString();
+function filterLicences() {
+  const q = document.getElementById('licenceSearch').value.toLowerCase();
+  const plan = document.getElementById('filterPlan').value;
+  const status = document.getElementById('filterStatus').value;
+  const filtered = allLicences.filter(l => {
+    const matchQ = !q || (l.buyerName||'').toLowerCase().includes(q) || (l.buyerEmail||'').toLowerCase().includes(q) || (l.key||'').toLowerCase().includes(q);
+    const matchPlan = !plan || l.plan === plan;
+    const matchStatus = !status || l.status === status;
+    return matchQ && matchPlan && matchStatus;
+  });
+  renderLicencesTable(filtered);
 }
 
-function setStatus(msg, isError = false) {
-  $('status').innerHTML = `<span class="${isError ? 'err' : 'ok'}">${escapeHtml(msg)}</span>`;
+function updateStats(licences) {
+  document.getElementById('statTotal').textContent = licences.length;
+  document.getElementById('statActive').textContent = licences.filter(l => l.status === 'active').length;
+  document.getElementById('statFree').textContent = licences.filter(l => l.plan === 'free').length;
+  document.getElementById('statRevoked').textContent = licences.filter(l => l.status === 'revoked').length;
 }
 
-function escapeHtml(str) {
-  return String(str).replace(/[&<>"']/g, s => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[s]));
+function cacheLicence(licence) {
+  let cached = [];
+  try { cached = JSON.parse(localStorage.getItem('invokit_admin_cache') || '[]'); } catch(e){}
+  // Update or add
+  const idx = cached.findIndex(l => l.key === licence.key);
+  if (idx > -1) cached[idx] = {...cached[idx], ...licence};
+  else cached.unshift(licence);
+  try { localStorage.setItem('invokit_admin_cache', JSON.stringify(cached)); } catch(e){}
+  allLicences = cached;
+  renderLicencesTable(cached);
+  updateStats(cached);
+}
+
+// ── GENERATE PAID ─────────────────────────────────────────────────────────────
+async function generatePaid() {
+  const name = document.getElementById('g_name').value.trim();
+  const email = document.getElementById('g_email').value.trim();
+  const plan = document.getElementById('g_plan').value;
+  const devices = parseInt(document.getElementById('g_devices').value) || 2;
+  const ref = document.getElementById('g_ref').value.trim();
+  const notes = document.getElementById('g_notes').value.trim();
+  if (!name || !email) { showMsg('genPaidMsg','Please fill in name and email.','error'); return; }
+  const btn = document.getElementById('genPaidBtn');
+  btn.disabled = true; btn.textContent = 'Generating…';
+  try {
+    const data = await api('/generate','POST',{buyerName:name,buyerEmail:email,plan,deviceLimit:devices,orderRef:ref||'MANUAL',notes});
+    if (!data.ok) { showMsg('genPaidMsg', data.error||'Failed.','error'); return; }
+    const l = data.licence;
+    document.getElementById('genPaidKey').textContent = l.key;
+    document.getElementById('genPaidDetail').innerHTML =
+      'Plan: ' + l.plan.toUpperCase() + ' · Devices: ' + l.deviceLimit + '<br>' +
+      'Buyer: ' + esc(l.buyerName) + ' · ' + esc(l.buyerEmail) + '<br>' +
+      'Created: ' + new Date(l.createdAt).toLocaleString('en-GB');
+    document.getElementById('genPaidResult').classList.add('show');
+    showMsg('genPaidMsg','Key generated successfully!','success');
+    cacheLicence({...l, status:'active'});
+    // Clear form
+    ['g_name','g_email','g_ref','g_notes'].forEach(id => document.getElementById(id).value = '');
+  } catch(e) {
+    showMsg('genPaidMsg','Error: ' + e.message,'error');
+  } finally {
+    btn.disabled = false; btn.textContent = 'Generate Key →';
+  }
+}
+
+function updateDeviceLimit() {
+  const plan = document.getElementById('g_plan').value;
+  document.getElementById('g_devices').value = plan === 'annual' ? 2 : 5;
+}
+
+// ── GENERATE FREE ─────────────────────────────────────────────────────────────
+async function generateFree() {
+  const name = document.getElementById('f_name').value.trim();
+  const email = document.getElementById('f_email').value.trim();
+  const notes = document.getElementById('f_notes').value.trim();
+  if (!name || !email) { showMsg('genFreeMsg','Please fill in name and email.','error'); return; }
+  const btn = document.getElementById('genFreeBtn');
+  btn.disabled = true; btn.textContent = 'Generating…';
+  try {
+    const data = await api('/generate-free','POST',{recipientName:name,recipientEmail:email,notes});
+    if (!data.ok) { showMsg('genFreeMsg', data.error||'Failed.','error'); return; }
+    const l = data.licence;
+    document.getElementById('genFreeKey').textContent = l.key;
+    document.getElementById('genFreeDetail').innerHTML =
+      'Plan: FREE · 1 device · 5 invoices max<br>' +
+      'Recipient: ' + esc(l.recipientName) + ' · ' + esc(l.recipientEmail) + '<br>' +
+      'Created: ' + new Date(l.createdAt).toLocaleString('en-GB');
+    document.getElementById('genFreeResult').classList.add('show');
+    showMsg('genFreeMsg','Free key generated!','success');
+    cacheLicence({...l, buyerName:l.recipientName, buyerEmail:l.recipientEmail, status:'active'});
+    ['f_name','f_email','f_notes'].forEach(id => document.getElementById(id).value = '');
+  } catch(e) {
+    showMsg('genFreeMsg','Error: ' + e.message,'error');
+  } finally {
+    btn.disabled = false; btn.textContent = 'Generate Free Key →';
+  }
+}
+
+// ── FIND ──────────────────────────────────────────────────────────────────────
+async function findLicence() {
+  const email = document.getElementById('find_email').value.trim();
+  const serial = document.getElementById('find_serial').value.trim();
+  if (!email && !serial) { showMsg('findMsg','Enter an email or serial.','error'); return; }
+  const btn = document.getElementById('findBtn');
+  btn.disabled = true; btn.textContent = 'Searching…';
+  document.getElementById('findResults').innerHTML = '';
+  try {
+    const path = email ? '/find?email=' + encodeURIComponent(email) : '/find?serial=' + encodeURIComponent(serial);
+    const data = await api(path);
+    if (!data.ok) { showMsg('findMsg', data.error||'Error.','error'); return; }
+    const list = data.licences || [];
+    if (!list.length) { showMsg('findMsg','No licences found.','info'); return; }
+    showMsg('findMsg', list.length + ' licence(s) found.','success');
+    document.getElementById('findResults').innerHTML = list.map(l => {
+      const planBadge = l.plan === 'free' ? 'badge-free' : l.plan === 'annual' ? 'badge-annual' : 'badge-lifetime';
+      const statusBadge = l.status === 'active' ? 'badge-active' : 'badge-revoked';
+      return '<div style="margin-top:12px;padding:14px;background:var(--surface2);border-radius:8px;border:1px solid var(--border)">' +
+        '<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:8px;">' +
+          '<span class="mono" style="color:var(--gold)">' + esc(l.serial||'—') + '</span>' +
+          '<div style="display:flex;gap:6px;"><span class="badge ' + planBadge + '">' + (l.plan||'').toUpperCase() + '</span><span class="badge ' + statusBadge + '">' + (l.status||'') + '</span></div>' +
+        '</div>' +
+        '<div style="font-size:12px;color:var(--text2);line-height:1.9">' +
+          esc(l.buyer_name||'—') + ' · ' + esc(l.buyer_email||'—') + '<br>' +
+          'Devices: ' + (l.device_limit||1) + ' · Ref: ' + esc(l.order_ref||'—') + '<br>' +
+          'Created: ' + (l.created_at ? new Date(l.created_at).toLocaleDateString('en-GB') : '—') + ' · Last used: ' + (l.last_validated_at ? new Date(l.last_validated_at).toLocaleDateString('en-GB') : 'Never') +
+        '</div>' +
+      '</div>';
+    }).join('');
+    list.forEach(l => cacheLicence({key: l.serial, buyerName:l.buyer_name, buyerEmail:l.buyer_email, plan:l.plan, status:l.status, deviceLimit:l.device_limit, createdAt:l.created_at, lastValidatedAt:l.last_validated_at}));
+  } catch(e) {
+    showMsg('findMsg','Error: ' + e.message,'error');
+  } finally {
+    btn.disabled = false; btn.textContent = 'Search →';
+  }
+}
+
+// ── REVOKE ────────────────────────────────────────────────────────────────────
+async function revokeLicence() {
+  const key = document.getElementById('revoke_key').value.trim().toUpperCase();
+  const confirm = document.getElementById('revoke_confirm').value.trim();
+  if (!key) { showMsg('revokeMsg','Enter a key.','error'); return; }
+  if (confirm !== 'REVOKE') { showMsg('revokeMsg','Type REVOKE in the confirm field.','error'); return; }
+  const btn = document.getElementById('revokeBtn');
+  btn.disabled = true; btn.textContent = 'Revoking…';
+  try {
+    const data = await api('/revoke','POST',{key});
+    if (!data.ok) { showMsg('revokeMsg', data.error||'Failed.','error'); return; }
+    showMsg('revokeMsg','Key revoked successfully. The user will be locked out immediately.','success');
+    document.getElementById('revoke_key').value = '';
+    document.getElementById('revoke_confirm').value = '';
+    // Update cache
+    let cached = [];
+    try { cached = JSON.parse(localStorage.getItem('invokit_admin_cache') || '[]'); } catch(e){}
+    const idx = cached.findIndex(l => l.key === key);
+    if (idx > -1) { cached[idx].status = 'revoked'; localStorage.setItem('invokit_admin_cache', JSON.stringify(cached)); allLicences = cached; renderLicencesTable(cached); updateStats(cached); }
+  } catch(e) {
+    showMsg('revokeMsg','Error: ' + e.message,'error');
+  } finally {
+    btn.disabled = false; btn.textContent = 'Revoke Key';
+  }
+}
+
+async function quickRevoke(key) {
+  if (!confirm('Revoke key ' + key + '? The user will be locked out immediately.')) return;
+  try {
+    const data = await api('/revoke','POST',{key});
+    if (data.ok) {
+      showToastMsg('Key revoked.');
+      let cached = [];
+      try { cached = JSON.parse(localStorage.getItem('invokit_admin_cache') || '[]'); } catch(e){}
+      const idx = cached.findIndex(l => l.key === key);
+      if (idx > -1) { cached[idx].status = 'revoked'; localStorage.setItem('invokit_admin_cache', JSON.stringify(cached)); allLicences = cached; renderLicencesTable(cached); updateStats(cached); }
+    }
+  } catch(e) {}
+}
+
+// ── HELPERS ───────────────────────────────────────────────────────────────────
+function esc(str) {
+  return String(str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function showMsg(id, text, type) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.className = 'msg show msg-' + type;
+  el.textContent = text;
+  if (type === 'success') setTimeout(() => { el.className = 'msg'; }, 5000);
+}
+
+function copyKey(elId) {
+  const text = document.getElementById(elId).textContent;
+  navigator.clipboard.writeText(text).then(() => showToastMsg('Key copied!'));
+}
+
+let toastTimer;
+function showToastMsg(msg) {
+  let toast = document.getElementById('adminToast');
+  if (!toast) {
+    toast = document.createElement('div');
+    toast.id = 'adminToast';
+    toast.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--surface3);border:1px solid var(--border2);color:var(--gold);padding:10px 20px;border-radius:8px;font-size:13px;z-index:9999;font-family:Outfit,sans-serif;';
+    document.body.appendChild(toast);
+  }
+  toast.textContent = msg;
+  toast.style.opacity = '1';
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { toast.style.opacity = '0'; }, 2500);
 }
 </script>
 </body>
