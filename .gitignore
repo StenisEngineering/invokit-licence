@@ -1,0 +1,7 @@
+
+# Local secrets — never commit
+.keys_PRIVATE_do_not_commit.json
+.keys_PUBLIC.json
+.dev.vars
+node_modules/
+.wrangler/

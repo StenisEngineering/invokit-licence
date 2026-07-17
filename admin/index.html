@@ -632,6 +632,10 @@ async function findLicence() {
           'Devices: ' + (l.device_limit||1) + ' · Ref: ' + esc(l.order_ref||'—') + '<br>' +
           'Created: ' + (l.created_at ? new Date(l.created_at).toLocaleDateString('en-GB') : '—') + ' · Last used: ' + (l.last_validated_at ? new Date(l.last_validated_at).toLocaleDateString('en-GB') : 'Never') +
         '</div>' +
+        '<div style="margin-top:10px;">' +
+          '<button class="btn btn-sm" onclick="loadAdminDevices(\'' + esc(l.serial) + '\')">Manage devices</button>' +
+          '<div id="admdev-' + esc(l.serial) + '" style="margin-top:8px;"></div>' +
+        '</div>' +
       '</div>';
     }).join('');
     list.forEach(l => cacheLicence({key: l.serial, buyerName:l.buyer_name, buyerEmail:l.buyer_email, plan:l.plan, status:l.status, deviceLimit:l.device_limit, createdAt:l.created_at, lastValidatedAt:l.last_validated_at}));
@@ -639,6 +643,47 @@ async function findLicence() {
     showMsg('findMsg','Error: ' + e.message,'error');
   } finally {
     btn.disabled = false; btn.textContent = 'Search →';
+  }
+}
+
+// ── DEVICES (per-licence activation management) ───────────────────────────────
+async function loadAdminDevices(serial) {
+  const box = document.getElementById('admdev-' + serial);
+  if (!box) return;
+  box.innerHTML = '<span style="font-size:12px;color:var(--text2)">Loading devices…</span>';
+  try {
+    const data = await api('/devices', 'POST', { serial });
+    if (!data.ok) { box.innerHTML = '<span style="font-size:12px;color:var(--red)">' + esc(data.error || 'Error') + '</span>'; return; }
+    renderAdminDevices(serial, data);
+  } catch (e) {
+    box.innerHTML = '<span style="font-size:12px;color:var(--red)">Error: ' + esc(e.message) + '</span>';
+  }
+}
+
+function renderAdminDevices(serial, data) {
+  const box = document.getElementById('admdev-' + serial);
+  const devices = data.devices || [];
+  const head = '<div style="font-size:11.5px;color:var(--text2);margin-bottom:6px;"><strong>' + (data.used != null ? data.used : devices.length) + ' of ' + (data.deviceLimit || 1) + '</strong> activations in use</div>';
+  if (!devices.length) { box.innerHTML = head + '<div style="font-size:12px;color:var(--text2)">No active devices.</div>'; return; }
+  box.innerHTML = head + devices.map(function(d) {
+    return '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 10px;background:var(--surface);border:1px solid var(--border);border-radius:6px;margin-bottom:6px;">'
+      + '<div style="font-size:12px;color:var(--text2);min-width:0;">'
+      +   '<div class="mono" style="color:var(--text);word-break:break-all;font-size:11px;">' + esc(d.installId) + '</div>'
+      +   '<div>' + esc(d.deviceName || '—') + ' · last used ' + (d.lastSeenAt ? new Date(d.lastSeenAt).toLocaleDateString('en-GB') : '—') + '</div>'
+      + '</div>'
+      + '<button class="btn btn-danger btn-sm" onclick="removeAdminDevice(\'' + esc(serial) + '\',\'' + esc(d.installId) + '\')">Remove</button>'
+      + '</div>';
+  }).join('');
+}
+
+async function removeAdminDevice(serial, installId) {
+  if (!confirm('Remove this device from ' + serial + '? This frees one activation slot. The device will need to re-activate.')) return;
+  try {
+    const data = await api('/deactivate', 'POST', { serial, targetInstallId: installId });
+    if (!data.ok) { alert(data.error || 'Could not remove device'); return; }
+    loadAdminDevices(serial);
+  } catch (e) {
+    alert('Error: ' + e.message);
   }
 }
 

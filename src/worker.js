@@ -31,6 +31,12 @@ var worker_default = {
         await requireAdmin(request, env);
         return await handleFind(request, env, url);
       }
+      if (path === "/devices" && method === "POST") {
+        return await handleDevices(request, env);
+      }
+      if (path === "/deactivate" && method === "POST") {
+        return await handleDeactivate(request, env);
+      }
       if (path === "/webhook/lemonsqueezy" && method === "POST") {
         return await handleLemonSqueezyWebhook(request, env);
       }
@@ -234,7 +240,10 @@ async function handleValidate(request, env) {
 
   const planRules = getPlanRules(licence.plan);
 
-  const activationToken = await signActivationToken({
+  const RECHECK_DAYS = 30;
+  const recheckAfter = new Date(Date.now() + RECHECK_DAYS * 24 * 60 * 60 * 1000).toISOString();
+  const activationToken = await signActivationTokenES256({
+    v: 2,
     licenceId: licence.id,
     serial: licence.serial,
     installId,
@@ -242,8 +251,10 @@ async function handleValidate(request, env) {
     buyerEmail: licence.buyer_email,
     activatedAt: now,
     expiresAt: licence.expires_at || null,
-    deviceLimit: licence.device_limit
-  }, env.ACTIVATION_SECRET);
+    deviceLimit: licence.device_limit,
+    recheckAfter,
+    features: planRules
+  }, env.ACTIVATION_PRIVATE_KEY);
 
   return json({
     ok: true,
@@ -255,6 +266,7 @@ async function handleValidate(request, env) {
         buyerEmail: licence.buyer_email,
         deviceLimit: licence.device_limit,
         expiresAt: licence.expires_at || null,
+        recheckAfter,
         // Return plan rules so the app can enforce them client-side
         features: planRules
       }
@@ -485,6 +497,101 @@ async function verifyLsSignature(rawBody, signature, secret) {
   }
 }
 __name(verifyLsSignature, "verifyLsSignature");
+
+// ── DEVICES (app + admin) ─────────────────────────────────────────────────────
+// Lists the activations on a licence. App auth = key + an active installId.
+// Admin auth = X-Admin-Secret + serial.
+async function handleDevices(request, env) {
+  const body = await request.json();
+  const adminSecret = request.headers.get("X-Admin-Secret") || "";
+  let licence;
+  let callerInstallId = "";
+  if (adminSecret) {
+    await requireAdmin(request, env);
+    const serial = clean(body.serial || "", 40).toUpperCase();
+    if (!serial) throw httpError("Serial is required", 400);
+    licence = await env.DB.prepare("SELECT * FROM licences WHERE serial = ? LIMIT 1").bind(serial).first();
+  } else {
+    const key = clean(body.key, 64).toUpperCase();
+    callerInstallId = clean(body.installId, 120);
+    if (!key) throw httpError("Licence key is required", 400);
+    if (!callerInstallId) throw httpError("Install ID is required", 400);
+    const keyHash = await sha256Hex(key + "|" + env.KEY_PEPPER);
+    licence = await env.DB.prepare("SELECT * FROM licences WHERE licence_key_hash = ? LIMIT 1").bind(keyHash).first();
+    if (licence) {
+      const caller = await env.DB.prepare("SELECT id FROM activations WHERE licence_id = ? AND install_id = ? LIMIT 1").bind(licence.id, callerInstallId).first();
+      if (!caller) throw httpError("This device is not activated on this licence", 403);
+    }
+  }
+  if (!licence) throw httpError("Invalid licence", 404);
+  const { results } = await env.DB.prepare(
+    `SELECT id, install_id, device_name, app_version, activated_at, last_seen_at FROM activations WHERE licence_id = ? ORDER BY last_seen_at DESC`
+  ).bind(licence.id).all();
+  const devices = (results || []).map((a) => ({
+    id: a.id,
+    installId: a.install_id,
+    deviceName: a.device_name || "Unknown device",
+    appVersion: a.app_version || "",
+    activatedAt: a.activated_at,
+    lastSeenAt: a.last_seen_at,
+    current: a.install_id === callerInstallId
+  }));
+  return json({ ok: true, deviceLimit: licence.device_limit, used: devices.length, devices }, 200, request, env);
+}
+__name(handleDevices, "handleDevices");
+
+// ── DEACTIVATE (app + admin) ──────────────────────────────────────────────────
+// Removes one activation to free a slot. App auth = key + active installId.
+// Admin auth = X-Admin-Secret + serial. Removal target = targetInstallId.
+async function handleDeactivate(request, env) {
+  const body = await request.json();
+  const adminSecret = request.headers.get("X-Admin-Secret") || "";
+  const targetInstallId = clean(body.targetInstallId || "", 120);
+  if (!targetInstallId) throw httpError("Target device is required", 400);
+  let licence;
+  if (adminSecret) {
+    await requireAdmin(request, env);
+    const serial = clean(body.serial || "", 40).toUpperCase();
+    if (!serial) throw httpError("Serial is required", 400);
+    licence = await env.DB.prepare("SELECT * FROM licences WHERE serial = ? LIMIT 1").bind(serial).first();
+  } else {
+    const key = clean(body.key, 64).toUpperCase();
+    const installId = clean(body.installId, 120);
+    if (!key) throw httpError("Licence key is required", 400);
+    if (!installId) throw httpError("Install ID is required", 400);
+    const keyHash = await sha256Hex(key + "|" + env.KEY_PEPPER);
+    licence = await env.DB.prepare("SELECT * FROM licences WHERE licence_key_hash = ? LIMIT 1").bind(keyHash).first();
+    if (licence) {
+      const caller = await env.DB.prepare("SELECT id FROM activations WHERE licence_id = ? AND install_id = ? LIMIT 1").bind(licence.id, installId).first();
+      if (!caller) throw httpError("This device is not activated on this licence", 403);
+    }
+  }
+  if (!licence) throw httpError("Invalid licence", 404);
+  const res = await env.DB.prepare("DELETE FROM activations WHERE licence_id = ? AND install_id = ?").bind(licence.id, targetInstallId).run();
+  const removed = res.meta?.changes || 0;
+  const countRow = await env.DB.prepare("SELECT COUNT(*) AS c FROM activations WHERE licence_id = ?").bind(licence.id).first();
+  return json({ ok: true, removed, used: Number(countRow?.c || 0), deviceLimit: licence.device_limit }, 200, request, env);
+}
+__name(handleDeactivate, "handleDeactivate");
+
+// ── ES256 ACTIVATION TOKEN (asymmetric — client verifies with public key) ─────
+async function importEcdsaPrivateKey(jwkString) {
+  const jwk = typeof jwkString === "string" ? JSON.parse(jwkString) : jwkString;
+  return crypto.subtle.importKey("jwk", jwk, { name: "ECDSA", namedCurve: "P-256" }, false, ["sign"]);
+}
+__name(importEcdsaPrivateKey, "importEcdsaPrivateKey");
+
+async function signActivationTokenES256(payload, privateJwk) {
+  if (!privateJwk) throw httpError("Server signing key not configured", 500);
+  const header = { alg: "ES256", typ: "IVK2" };
+  const encodedHeader = base64url(JSON.stringify(header));
+  const encodedBody = base64url(JSON.stringify(payload));
+  const signingInput = `${encodedHeader}.${encodedBody}`;
+  const key = await importEcdsaPrivateKey(privateJwk);
+  const sig = await crypto.subtle.sign({ name: "ECDSA", hash: "SHA-256" }, key, new TextEncoder().encode(signingInput));
+  return `${signingInput}.${base64urlBytes(new Uint8Array(sig))}`;
+}
+__name(signActivationTokenES256, "signActivationTokenES256");
 
 // ── HELPERS ───────────────────────────────────────────────────────────────────
 function clean(value, maxLen = 255) {
